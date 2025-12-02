@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Mediapipe;
 using Mediapipe.Unity.Sample;
@@ -12,6 +13,8 @@ namespace Mediapipe.Unity.Sample.Holistic
 
     // 实时更新的姿态特征点列表（NormalizedLandmark）
     private IReadOnlyList<NormalizedLandmark> _currentPoseLandmarkList;
+    private Vector3[] _currentPostWorldPosArray = new Vector3[33];//33个特征点检测
+    public BoneRelocator boneRelocator;
 
     // 为每个特征点生成/复用的红色小球
     private readonly List<GameObject> _landmarkSpheres = new List<GameObject>();
@@ -25,6 +28,11 @@ namespace Mediapipe.Unity.Sample.Holistic
     [Header("Sphere 设置")]
     [SerializeField] private float gizmoDepth = 2.0f;   // 特征点在相机前方的深度
     [SerializeField] private float gizmoRadius = 0.02f; // 红色球半径
+
+    private void Start()
+    {
+      boneRelocator.PoseLandmarkWorldposArray =  _currentPostWorldPosArray;
+    }
 
     private void Update()
     {
@@ -51,6 +59,7 @@ namespace Mediapipe.Unity.Sample.Holistic
         var worldPos = GetWorldPositionFromLandmark(landmark);
         var sphere = _landmarkSpheres[i];
         worldPos = new Vector3(-worldPos.x, worldPos.y, worldPos.z); // 镜像
+        _currentPostWorldPosArray[i] = worldPos;
 
         sphere.transform.position = worldPos;
         if (!sphere.activeSelf)
@@ -78,6 +87,7 @@ namespace Mediapipe.Unity.Sample.Holistic
           }
         }
       }
+      boneRelocator.PoseLandmarkWorldposArray =  _currentPostWorldPosArray;
 
       // 多余的小球和编号隐藏
       for (var i = _currentPoseLandmarkList.Count; i < _landmarkSpheres.Count; i++)
