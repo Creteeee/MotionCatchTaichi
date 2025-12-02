@@ -20,6 +20,7 @@ public class BoneRelocator : MonoBehaviour
   public Transform Spine2;
   public Transform Neck;
   public Transform LeftArm;
+  public float shouderW=0.75f;
 
   private int time = 0;
 
@@ -151,7 +152,8 @@ public class BoneRelocator : MonoBehaviour
     // ---------------------------
     // (B) 估算真实肩膀位置（关节位置）
     // ---------------------------
-    float shoulderWidth = Vector3.Distance(l11, l12) * 0.26f;
+    float shoulderWidth = Vector3.Distance(l11, l12) * 0.8f;
+    shoulderWidth = shouderW;
 
     
     if (time <=0)
@@ -162,6 +164,7 @@ public class BoneRelocator : MonoBehaviour
 
     realLeftShoulder.z = l11.z;
     
+    realLeftShoulder = chest + (l11 - chest).normalized * shoulderWidth;
     
 
     Vector3 realRightShoulder =
@@ -203,7 +206,7 @@ public class BoneRelocator : MonoBehaviour
         Vector3.forward
     );
     Quaternion rot2 = LeftArm.transform.localRotation;
-    RotateBone(l13, midLeftUpperArm, midLeftUpperArm, realLeftShoulder, LeftArm,bones[11].bone);
+    RotateBone(l13, l11, l11, realLeftShoulder, LeftArm,bones[11].bone);
     //LeftArm.localRotation = Quaternion.Lerp(rot2,qShoulder*rot2,lerp);
     
     // Forearm rotation
