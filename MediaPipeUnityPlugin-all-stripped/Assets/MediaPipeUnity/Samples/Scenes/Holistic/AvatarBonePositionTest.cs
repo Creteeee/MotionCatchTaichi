@@ -10,6 +10,7 @@ namespace Mediapipe.Unity.Sample.Holistic
   public class AvatarBonePositionTest : MonoBehaviour
   {
     public List<Transform> bones = new List<Transform>();
+    public Camera cameraMain;
 
     // 实时更新的姿态特征点列表（NormalizedLandmark）
     private IReadOnlyList<NormalizedLandmark> _currentPoseLandmarkList;
@@ -36,7 +37,7 @@ namespace Mediapipe.Unity.Sample.Holistic
 
     private void Update()
     {
-      if (Camera.main == null || holisticSolution == null)
+      if (cameraMain == null || holisticSolution == null)
       {
         return;
       }
@@ -72,7 +73,7 @@ namespace Mediapipe.Unity.Sample.Holistic
         {
           var label = _indexLabels[i];
           // 稍微往相机方向偏移一点，避免和球重叠
-          var cam = Camera.main;
+          var cam = cameraMain;
           var offset = cam != null ? cam.transform.forward * gizmoRadius * 1.5f : Vector3.forward * gizmoRadius * 1.5f;
           label.transform.position = worldPos + offset;
           if (cam != null)
@@ -194,7 +195,7 @@ namespace Mediapipe.Unity.Sample.Holistic
     {
       // MediaPipe 的 y 轴是向下的，这里做一次翻转到 Unity 的视口坐标
       var viewport = new Vector3(landmark.X, 1f - landmark.Y, gizmoDepth);
-      return Camera.main != null ? Camera.main.ViewportToWorldPoint(viewport) : Vector3.zero;
+      return cameraMain != null ? cameraMain.ViewportToWorldPoint(viewport) : Vector3.zero;
     }
 
     /// <summary>
