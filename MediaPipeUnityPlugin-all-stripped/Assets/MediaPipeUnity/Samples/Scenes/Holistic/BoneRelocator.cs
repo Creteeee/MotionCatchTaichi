@@ -8,50 +8,38 @@ using UnityEngine.UIElements;
 
 public class BoneRelocator : MonoBehaviour
 {
-  public List<LandmarkBone> bones = new List<LandmarkBone>(33);
-  public float lerp;
   
-  //先小小尝试下两个胳膊的节点可不可以正常旋转
-
   public Vector3[] PoseLandmarkWorldposArray;
-  //额外补充的骨骼
-  public Transform Spine2;
-  public Transform Neck;
-  public Transform LeftArm;
-  public Transform RightArm;
-  public float shouderW=0.75f;
+  public Vector3 hipsBasePos;
+  public Vector3 baseHipCenter;
+  public Transform footBase;
+  private float groundHeight;
 
-  private int time = 0;
 
-  void Reset()
+
+  //整理
+  public Bones bt;//bonesTransforms
+
+  private void Start()
   {
-    bones.Clear();
-    for (int i = 0; i < 33; i++)
-    {
-      bones.Add(new LandmarkBone {
-        landmark = (PoseLandmark)i,
-        bone = null
-      });
-    }
+    hipsBasePos = bt.Hips.localPosition;
+    baseHipCenter = PoseLandmarkWorldposArray[11] * 0.08f + PoseLandmarkWorldposArray[12] * 0.08f + 
+                    PoseLandmarkWorldposArray[23] * 0.42f + PoseLandmarkWorldposArray[24] * 0.42f;//可能有生命周期问题
+    groundHeight =  Mathf.Min(Mathf.Min(PoseLandmarkWorldposArray[29].y, PoseLandmarkWorldposArray[30].y), Mathf.Min(PoseLandmarkWorldposArray[31].y, PoseLandmarkWorldposArray[32].y));
+
+    Debug.Log(groundHeight);
+
   }
 
   private void Update()
   {
-    lerp += Time.deltaTime*10;
-    if (lerp >= 1.0f)
-    {
-      lerp = 0;
-    }
+
     CalculateBoneRotations();
   }
-
-  public Transform GetBone(int landmarkIndex)
-  {
-    return bones[landmarkIndex].bone;
-  }
-
   
+
   #region 骨骼旋向计算
+
   /// <summary>
   /// 计算子骨骼相对于父骨骼的四元数
   /// </summary>
@@ -64,15 +52,15 @@ public class BoneRelocator : MonoBehaviour
   private void RotateBone(Vector3 pos0, Vector3 pos1, Vector3 pos3, Vector3 pos4, Transform bone1, Transform bone2)
   {
     //pos0 pos1当前骨骼方向，pos3 pos4 父骨骼方向
-    var dir1 = Vector3.Normalize(pos0-pos1);
-    var dir2 = Vector3.Normalize(pos3-pos4);
-    Quaternion rot = Quaternion.FromToRotation(dir2,dir1);
+    var dir1 = Vector3.Normalize(pos0 - pos1);
+    var dir2 = Vector3.Normalize(pos3 - pos4);
+    Quaternion rot = Quaternion.FromToRotation(dir2, dir1);
     Quaternion rot1 = bone2.rotation;
-    bone1.rotation = rot*rot1;
+    bone1.rotation = rot * rot1;
   }
 
   public void CalculateBoneRotations()
-{
+  {
     // 1. MediaPipe 原始点
     var l0 = PoseLandmarkWorldposArray[0];
     var l1 = PoseLandmarkWorldposArray[1];
@@ -90,7 +78,7 @@ public class BoneRelocator : MonoBehaviour
     var l13 = PoseLandmarkWorldposArray[13]; // Left elbow
     var l14 = PoseLandmarkWorldposArray[14];
     var l15 = PoseLandmarkWorldposArray[15]; // Left wrist
-    var l16 =  PoseLandmarkWorldposArray[16];
+    var l16 = PoseLandmarkWorldposArray[16];
     var l17 = PoseLandmarkWorldposArray[17];
     var l18 = PoseLandmarkWorldposArray[18];
     var l19 = PoseLandmarkWorldposArray[19];
@@ -99,120 +87,123 @@ public class BoneRelocator : MonoBehaviour
     var l22 = PoseLandmarkWorldposArray[22];
     var l23 = PoseLandmarkWorldposArray[23]; // Left hip
     var l24 = PoseLandmarkWorldposArray[24]; // Right hip
+    var l25 = PoseLandmarkWorldposArray[25];
+    var l26 = PoseLandmarkWorldposArray[26];
+    var l27 = PoseLandmarkWorldposArray[27];
+    var l28 = PoseLandmarkWorldposArray[28];
+    var l29 = PoseLandmarkWorldposArray[29];
+    var l30 = PoseLandmarkWorldposArray[30];
+    var l31 = PoseLandmarkWorldposArray[31];
+    var l32 = PoseLandmarkWorldposArray[32];
 
-    // ---------------------------
-    // (A) 计算胸部（真实中心点）
-    // ---------------------------
-    Vector3 chest = (l11 + l12 + l23 + l24) * 0.25f;
 
-    // ---------------------------
-    // (B) 估算真实肩膀位置（关节位置）
-    // ---------------------------
-    float shoulderWidth = Vector3.Distance(l11, l12) * 0.8f;
-    shoulderWidth = shouderW;
-    
-    Vector3 realLeftShoulder = chest + (l11 - chest).normalized * shoulderWidth;
-    Vector3 realRightShoulder = chest + (l12 - chest).normalized * shoulderWidth;
+    Vector3 l_hips = l11 * 0.08f + l12 * 0.08f + l23 * 0.42f + l24 * 0.42f;
+    Vector3 l_spine = l11 * 0.15f + l12 * 0.15f + l23 * 0.35f + l24 * 0.35f;
+    Vector3 l_spine1 = (l11 + l12 + l23 + l24) * 0.25f;
+    Vector3 l_spine2 = l11 * 0.35f + l12 * 0.35f + l23 * 0.15f + l24 * 0.15f;
 
-    // ---------------------------
-    // (C) 估算上臂位置（用于旋转平滑）
-    // ---------------------------
-    Vector3 midLeftUpperArm = Vector3.Lerp(realLeftShoulder, l13, 0.5f);
-    Vector3 midRightUpperArm = Vector3.Lerp(realRightShoulder, l14, 0.5f);
-    Vector3 handCenterLeft = (l17 + l19 + l21) / 3;
-    Vector3 handCenterRight = (l18 + l20 +l22) / 3;
-    Vector3 neck = (l9 + l10 + l11 + l12) / 4;
-    Vector3 mouthCenter = (l9 + l10) / 2;
-    Vector3 head = l0;
-    Vector3 eyeCenter = (l1+l4)/2;
-    
-  
-    // Shoulder rotation
-    RotateBone(l11, realLeftShoulder, chest+Vector3.up,chest , bones[11].bone,Spine2);
-    RotateBone(l12,realRightShoulder,chest+Vector3.up,chest , bones[12].bone,Spine2);
+    float shoulderWidth = Vector3.Distance(l11, l12) * 0.5f;
+    Vector3 l_LeftShoulder = l_spine2 + (l11 - l_spine2).normalized * shoulderWidth;
+    Vector3 l_RightShoulder = l_spine2 + (l12 - l_spine2).normalized * shoulderWidth;
+
+
+    Vector3 l_handCenterLeft = (l17 + l19 + l15) / 3;
+    Vector3 l_handCenterRight = (l18 + l20 + l16) / 3;
+    Vector3 l_neck = (l9 + l10 + l11 + l12) / 4;
+    Vector3 l_head = (l0 + l1 + l2 + l3 + l4 + l5 + l6 + l7 + l8 + l9 + l10) / 11;
+    Vector3 l_eyeCenter = (l1 + l4) / 2;
+    Vector3 l_leftFootCenter = (l29 + l31) / 2;
+    Vector3 l_rightFootCenter = (l30 + l32) / 2;
+
+
+    //Hips,平移移动Armature
+    RotateBone(l_spine, l_hips, l_hips, l_hips - Vector3.up, bt.Hips, bt.Armature);
+    //Legs Rotation
+    RotateBone(l25, l23, l_spine, l_hips, bt.LeftUpLeg, bt.Hips);
+    RotateBone(l27, l25, l25, l23, bt.LeftLeg, bt.LeftUpLeg);
+    RotateBone(l_leftFootCenter, l27, l27, l25, bt.LeftFoot, bt.LeftLeg);
+    RotateBone(l26, l24, l_spine, l_hips, bt.RightUpLeg, bt.Hips);
+    RotateBone(l28, l26, l26, l24, bt.RightLeg, bt.RightUpLeg);
+    RotateBone(l_rightFootCenter, l28, l28, l26, bt.RightFoot, bt.RightLeg);
+
+    //Spines
+    RotateBone(l_spine1, l_spine, l_spine, l_hips, bt.Spine, bt.Hips);
+    RotateBone(l_spine2, l_spine1, l_spine1, l_spine, bt.Spine1, bt.Spine);
+    RotateBone(l_neck, l_spine2, l_spine2, l_spine1, bt.Spine2, bt.Spine1);
+
+    //Shoulders
+    RotateBone(l11, l_LeftShoulder, l_neck, l_spine2, bt.LeftShoulder, bt.Spine2);
+    RotateBone(l12, l_RightShoulder, l_neck, l_spine2, bt.RightShoulder, bt.Spine2);
 
     // Upper arm rotation
-    RotateBone(l13, l11, l11, realLeftShoulder, LeftArm,bones[11].bone);
-    RotateBone(l14, l12, l12, realRightShoulder, RightArm,bones[12].bone);
+    RotateBone(l13, l11, l11, l_LeftShoulder, bt.LeftArm, bt.LeftShoulder);
+    RotateBone(l14, l12, l12, l_RightShoulder, bt.RightArm, bt.RightShoulder);
 
     // Forearm rotation
-    RotateBone(l15, l13, l13, midLeftUpperArm, bones[13].bone,LeftArm);
-    RotateBone(l16, l14, l14, midRightUpperArm, bones[14].bone,RightArm);
-  
-    // Wrist rotationrot
-    RotateBone(handCenterLeft, l15, l15, l13, bones[15].bone,bones[13].bone);
-    RotateBone(handCenterRight,l16,l16,l14, bones[14].bone,bones[14].bone);
-    RotateBone(eyeCenter,mouthCenter,mouthCenter,neck,bones[0].bone,Neck);
-    
-}
+    RotateBone(l15, l13, l13, l11, bt.LeftForeArm, bt.LeftArm);
+    RotateBone(l16, l14, l14, l12, bt.RightForeArm, bt.RightArm);
 
+    // Wrist rotationrot
+    RotateBone(l_handCenterLeft, l15, l15, l13, bt.LeftHand, bt.LeftForeArm);
+    RotateBone(l_handCenterRight, l16, l16, l14, bt.RightArm, bt.RightArm);
+
+    //Head
+    RotateBone(l_eyeCenter, l_head, l_head, l_neck, bt.Head, bt.Neck);
+    
+    //计算Hip相对移动
+    
+    //确保脚趾贴地
+    
+    Vector3 
+      delta = l_hips - baseHipCenter;
+    float referenceShoulderWidth = Vector3.Distance(bt.LeftArm.position, bt.RightArm.position);
+    float scaleFactor = referenceShoulderWidth / Vector3.Distance(l11, l12);
+    
+    
+    float curlandMarkFootHeight = Mathf.Min(Mathf.Min(l29.y, l30.y), Mathf.Min(l31.y, l32.y));
+    float deltaY = (curlandMarkFootHeight - (-6f))*scaleFactor;
+    Debug.Log("deltaY"+deltaY);
+    if (!float.IsFinite(deltaY))
+    {
+      deltaY = 0f;
+    }
+    bt.Hips.position = new Vector3(bt.Hips.position.x,bt.Hips.position.y-deltaY,bt.Hips.position.z);
+
+  }
 
   #endregion
 
-  private void OnDrawGizmos()
+  [System.Serializable]
+  public class Bones
   {
-    if (!Application.isPlaying) return;
-    var l0 = PoseLandmarkWorldposArray[0];
-    var l11 = PoseLandmarkWorldposArray[11];
-    var l12 = PoseLandmarkWorldposArray[12];
-    var l23 = PoseLandmarkWorldposArray[23];
-    var l24 = PoseLandmarkWorldposArray[24];
-    var l_neck = (l11 + l12 )/2;
-    var l_spine2 = (l11 + l12 + l23 + l24)/4;
-    Gizmos.DrawRay(Neck.position,l0-l_neck);
-    
+    public Transform Armature;
+
+    public Transform Hips;
+    public Transform LeftUpLeg;
+    public Transform LeftLeg;
+    public Transform LeftFoot;
+    public Transform RightUpLeg;
+    public Transform RightLeg;
+    public Transform RightFoot;
+
+    public Transform Spine;
+    public Transform Spine1;
+    public Transform Spine2;
+    public Transform LeftShoulder;
+    public Transform LeftArm;
+    public Transform LeftForeArm;
+    public Transform LeftHand;
+    public Transform RightShoulder;
+    public Transform RightArm;
+    public Transform RightForeArm;
+    public Transform RightHand;
+
+    public Transform Neck;
+    public Transform Head;
   }
 }
 
-/// <summary>
-/// 骨骼名称和Transform对应
-/// </summary>
-[System.Serializable]
-public struct LandmarkBone
-{
-  public PoseLandmark landmark;   // 显示名字用
-  public Transform bone;          // 你要拖放的骨骼
-}
 
-/// <summary>
-/// 骨骼名称
-/// </summary>
-public enum PoseLandmark
-{
-  Nose = 0,
-  LeftEyeInner = 1,
-  LeftEye = 2,
-  LeftEyeOuter = 3,
-  RightEyeInner = 4,
-  RightEye = 5,
-  RightEyeOuter = 6,
-  LeftEar = 7,
-  RightEar = 8,
-  MouthLeft = 9,
-  MouthRight = 10,
-  LeftShoulder = 11,
-  RightShoulder = 12,
-  LeftElbow = 13,
-  RightElbow = 14,
-  LeftWrist = 15,
-  RightWrist = 16,
-  LeftPinky = 17,
-  RightPinky = 18,
-  LeftIndex = 19,
-  RightIndex = 20,
-  LeftThumb = 21,
-  RightThumb = 22,
-  LeftHip = 23,
-  RightHip = 24,
-  LeftKnee = 25,
-  RightKnee = 26,
-  LeftAnkle = 27,
-  RightAnkle = 28,
-  LeftHeel = 29,
-  RightHeel = 30,
-  LeftFootIndex = 31,
-  RightFootIndex = 32
-}
 
 
 
