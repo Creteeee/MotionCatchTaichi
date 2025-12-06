@@ -4,14 +4,12 @@ using System.Collections.Generic;
 using Mediapipe;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class BoneRelocator : MonoBehaviour
 {
   public List<LandmarkBone> bones = new List<LandmarkBone>(33);
-  Vector3 modelForwardAxis = Vector3.right; // local axis，Mixamo默认的模型方向，试下看看对不对
-  Vector3 modelUpAxis = Vector3.forward;         // local up axis
   public float lerp;
-  Vector3 realLeftShoulder = Vector3.zero;
   
   //先小小尝试下两个胳膊的节点可不可以正常旋转
 
@@ -20,6 +18,7 @@ public class BoneRelocator : MonoBehaviour
   public Transform Spine2;
   public Transform Neck;
   public Transform LeftArm;
+  public Transform RightArm;
   public float shouderW=0.75f;
 
   private int time = 0;
@@ -38,7 +37,7 @@ public class BoneRelocator : MonoBehaviour
 
   private void Update()
   {
-    lerp += Time.deltaTime;
+    lerp += Time.deltaTime*10;
     if (lerp >= 1.0f)
     {
       lerp = 0;
@@ -56,67 +55,21 @@ public class BoneRelocator : MonoBehaviour
   /// <summary>
   /// 计算子骨骼相对于父骨骼的四元数
   /// </summary>
-  /// <param name="parentPos"></param>
-  /// <param name="childPos"></param>
-  /// <param name="bone"></param>
-  /// <param name="modelForwardAxis"></param>
-  /// <param name="modelUpAxis"></param>
-  /// <returns></returns>
-  public static Quaternion ComputeLocalRotation(
-    Vector3 parentPos,
-    Vector3 childPos,
-    Transform bone,
-    Vector3 modelForwardAxis,
-    Vector3 modelUpAxis)
-  {
-    // 世界空间的目标方向
-    Vector3 targetDir = (childPos - parentPos).normalized;
-
-    // 计算 up（避免 roll）
-    // 先取一个世界空间的向上
-    Vector3 worldUp = Vector3.up;
-    // 避免 up 和 forward 平行
-    if (Mathf.Abs(Vector3.Dot(targetDir, worldUp)) > 0.99f)
-      worldUp = Vector3.right;
-
-    // 世界空间下的目标旋转
-    Quaternion targetWorldRot = Quaternion.LookRotation(
-      targetDir,
-      worldUp
-    );
-
-    // 把模型的 "forward" 和 "up" 轴对齐
-    Quaternion boneModelRot = Quaternion.LookRotation(
-      bone.TransformDirection(modelForwardAxis),
-      bone.TransformDirection(modelUpAxis)
-    );
-
-    // 计算本地旋转
-    Quaternion newLocalRot = Quaternion.Inverse(bone.parent.rotation) *
-                             targetWorldRot *
-                             Quaternion.Inverse(boneModelRot);
-    
-
-    return newLocalRot;
-  }
-
+  /// <param name="pos0"></param>
+  /// <param name="pos1"></param>
+  /// <param name="pos3"></param>
+  /// <param name="pos4"></param>
+  /// <param name="bone1"></param>
+  /// <param name="bone2"></param>
   private void RotateBone(Vector3 pos0, Vector3 pos1, Vector3 pos3, Vector3 pos4, Transform bone1, Transform bone2)
   {
     //pos0 pos1当前骨骼方向，pos3 pos4 父骨骼方向
     var dir1 = Vector3.Normalize(pos0-pos1);
     var dir2 = Vector3.Normalize(pos3-pos4);
-    // dir1 = new Vector3(0, -1, 0);
-    // dir2 = new Vector3(0, 1, 0);
     Quaternion rot = Quaternion.FromToRotation(dir2,dir1);
     Quaternion rot1 = bone2.rotation;
-
-    bone1.rotation = rot*rot1;;
-    
+    bone1.rotation = rot*rot1;
   }
-
-
-
-
 
   public void CalculateBoneRotations()
 {
@@ -135,12 +88,15 @@ public class BoneRelocator : MonoBehaviour
     var l11 = PoseLandmarkWorldposArray[11]; // Left shoulder landmark (外侧)
     var l12 = PoseLandmarkWorldposArray[12]; // Right shoulder landmark
     var l13 = PoseLandmarkWorldposArray[13]; // Left elbow
+    var l14 = PoseLandmarkWorldposArray[14];
     var l15 = PoseLandmarkWorldposArray[15]; // Left wrist
+    var l16 =  PoseLandmarkWorldposArray[16];
     var l17 = PoseLandmarkWorldposArray[17];
     var l18 = PoseLandmarkWorldposArray[18];
     var l19 = PoseLandmarkWorldposArray[19];
     var l20 = PoseLandmarkWorldposArray[20];
     var l21 = PoseLandmarkWorldposArray[21];
+    var l22 = PoseLandmarkWorldposArray[22];
     var l23 = PoseLandmarkWorldposArray[23]; // Left hip
     var l24 = PoseLandmarkWorldposArray[24]; // Right hip
 
@@ -154,85 +110,38 @@ public class BoneRelocator : MonoBehaviour
     // ---------------------------
     float shoulderWidth = Vector3.Distance(l11, l12) * 0.8f;
     shoulderWidth = shouderW;
-
     
-    if (time <=0)
-    {
-      realLeftShoulder = new Vector3(l11.x, l11.y, l11.z);
-      time += 1;
-    }
-
-    realLeftShoulder.z = l11.z;
-    
-    realLeftShoulder = chest + (l11 - chest).normalized * shoulderWidth;
-    
-
-    Vector3 realRightShoulder =
-        chest + (l12 - chest).normalized * shoulderWidth;
+    Vector3 realLeftShoulder = chest + (l11 - chest).normalized * shoulderWidth;
+    Vector3 realRightShoulder = chest + (l12 - chest).normalized * shoulderWidth;
 
     // ---------------------------
     // (C) 估算上臂位置（用于旋转平滑）
     // ---------------------------
     Vector3 midLeftUpperArm = Vector3.Lerp(realLeftShoulder, l13, 0.5f);
+    Vector3 midRightUpperArm = Vector3.Lerp(realRightShoulder, l14, 0.5f);
     Vector3 handCenterLeft = (l17 + l19 + l21) / 3;
+    Vector3 handCenterRight = (l18 + l20 +l22) / 3;
     Vector3 neck = (l9 + l10 + l11 + l12) / 4;
     Vector3 mouthCenter = (l9 + l10) / 2;
     Vector3 head = l0;
     Vector3 eyeCenter = (l1+l4)/2;
     
-
-    // ---------------------------
-    // (D) 驱动 Mixamo旋转
-    // ---------------------------
-
+  
     // Shoulder rotation
-    Quaternion qShoulder = ComputeLocalRotation(
-        chest,
-        l11,
-        bones[11].bone,
-        -Vector3.up,    // 本地 forward = Z
-        Vector3.forward          // 本地 up = Y
-    );
-    Quaternion rot1 = bones[11].bone.transform.localRotation;
     RotateBone(l11, realLeftShoulder, chest+Vector3.up,chest , bones[11].bone,Spine2);
-    //bones[11].bone.localRotation = Quaternion.Lerp(rot1,qShoulder*rot1,lerp);
+    RotateBone(l12,realRightShoulder,chest+Vector3.up,chest , bones[12].bone,Spine2);
 
     // Upper arm rotation
-    Quaternion qUpperArm = ComputeLocalRotation(
-        realLeftShoulder,
-        midLeftUpperArm,
-        LeftArm,
-        -Vector3.up,
-        Vector3.forward
-    );
-    Quaternion rot2 = LeftArm.transform.localRotation;
     RotateBone(l13, l11, l11, realLeftShoulder, LeftArm,bones[11].bone);
-    //LeftArm.localRotation = Quaternion.Lerp(rot2,qShoulder*rot2,lerp);
-    
+    RotateBone(l14, l12, l12, realRightShoulder, RightArm,bones[12].bone);
+
     // Forearm rotation
-    Quaternion qForearm = ComputeLocalRotation(
-        midLeftUpperArm,
-        l13,
-        bones[13].bone,
-        -Vector3.up,
-        Vector3.forward
-    );
-    Quaternion rot3 = bones[13].bone.transform.localRotation;
     RotateBone(l15, l13, l13, midLeftUpperArm, bones[13].bone,LeftArm);
-    //LeftArm.localRotation = Quaternion.Lerp(rot3,qShoulder*rot3,lerp);
-    
+    RotateBone(l16, l14, l14, midRightUpperArm, bones[14].bone,RightArm);
+  
     // Wrist rotationrot
-    Quaternion qWrist = ComputeLocalRotation(
-        l13,
-        l15,
-        bones[15].bone,
-        -Vector3.up,
-        Vector3.forward
-    );
-    Quaternion rot4 = bones[13].bone.transform.localRotation;
     RotateBone(handCenterLeft, l15, l15, l13, bones[15].bone,bones[13].bone);
-    //bones[15].bone.localRotation = Quaternion.Lerp(rot4,qShoulder*rot4,lerp);
-        
+    RotateBone(handCenterRight,l16,l16,l14, bones[14].bone,bones[14].bone);
     RotateBone(eyeCenter,mouthCenter,mouthCenter,neck,bones[0].bone,Neck);
     
 }
@@ -254,8 +163,6 @@ public class BoneRelocator : MonoBehaviour
     
   }
 }
-
-
 
 /// <summary>
 /// 骨骼名称和Transform对应
