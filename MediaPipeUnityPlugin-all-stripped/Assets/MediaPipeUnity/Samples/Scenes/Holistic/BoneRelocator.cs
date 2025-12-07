@@ -12,8 +12,9 @@ public class BoneRelocator : MonoBehaviour
   public Vector3[] PoseLandmarkWorldposArray;
   public Vector3 hipsBasePos;
   public Vector3 baseHipCenter;
-  public Transform footBase;
-  private float groundHeight;
+  public bool isInitialized = false;
+  private Vector3 lastDelta;
+  
 
 
 
@@ -25,9 +26,7 @@ public class BoneRelocator : MonoBehaviour
     hipsBasePos = bt.Hips.localPosition;
     baseHipCenter = PoseLandmarkWorldposArray[11] * 0.08f + PoseLandmarkWorldposArray[12] * 0.08f + 
                     PoseLandmarkWorldposArray[23] * 0.42f + PoseLandmarkWorldposArray[24] * 0.42f;//可能有生命周期问题
-    groundHeight =  Mathf.Min(Mathf.Min(PoseLandmarkWorldposArray[29].y, PoseLandmarkWorldposArray[30].y), Mathf.Min(PoseLandmarkWorldposArray[31].y, PoseLandmarkWorldposArray[32].y));
-
-    Debug.Log(groundHeight);
+   
 
   }
 
@@ -61,6 +60,11 @@ public class BoneRelocator : MonoBehaviour
 
   public void CalculateBoneRotations()
   {
+    if (PoseLandmarkWorldposArray == null || PoseLandmarkWorldposArray.Length < 33)
+    {
+      return;
+    }
+    
     // 1. MediaPipe 原始点
     var l0 = PoseLandmarkWorldposArray[0];
     var l1 = PoseLandmarkWorldposArray[1];
@@ -96,6 +100,12 @@ public class BoneRelocator : MonoBehaviour
     var l31 = PoseLandmarkWorldposArray[31];
     var l32 = PoseLandmarkWorldposArray[32];
 
+    if (!isInitialized)
+    {
+      baseHipCenter = PoseLandmarkWorldposArray[11] * 0.08f + PoseLandmarkWorldposArray[12] * 0.08f + 
+                      PoseLandmarkWorldposArray[23] * 0.42f + PoseLandmarkWorldposArray[24] * 0.42f;
+      isInitialized = true;
+    }
 
     Vector3 l_hips = l11 * 0.08f + l12 * 0.08f + l23 * 0.42f + l24 * 0.42f;
     Vector3 l_spine = l11 * 0.15f + l12 * 0.15f + l23 * 0.35f + l24 * 0.35f;
@@ -160,14 +170,22 @@ public class BoneRelocator : MonoBehaviour
     float scaleFactor = referenceShoulderWidth / Vector3.Distance(l11, l12);
     
     
-    float curlandMarkFootHeight = Mathf.Min(Mathf.Min(l29.y, l30.y), Mathf.Min(l31.y, l32.y));
-    float deltaY = (curlandMarkFootHeight - (-6f))*scaleFactor;
-    Debug.Log("deltaY"+deltaY);
-    if (!float.IsFinite(deltaY))
+    delta = delta*scaleFactor;
+   // Debug.Log("deltaY"+deltaY);
+    if (!float.IsFinite(delta.y))
     {
-      deltaY = 0f;
+      delta = Vector3.zero;
     }
-    bt.Hips.position = new Vector3(bt.Hips.position.x,bt.Hips.position.y-deltaY,bt.Hips.position.z);
+
+    
+    Debug.Log("和上一帧的差距"+Vector3.Distance(lastDelta,delta));
+    if (Vector3.Distance(lastDelta,delta)>=2)
+    {
+      return;
+      
+    }
+    lastDelta = delta;
+    bt.Hips.localPosition = hipsBasePos+delta;
 
   }
 
