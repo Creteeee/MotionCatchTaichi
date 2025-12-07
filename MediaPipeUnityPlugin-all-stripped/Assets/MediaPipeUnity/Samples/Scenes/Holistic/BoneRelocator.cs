@@ -14,6 +14,14 @@ public class BoneRelocator : MonoBehaviour
   public Vector3 baseHipCenter;
   public bool isInitialized = false;
   private Vector3 lastDelta;
+  public GameObject footPlane;
+  
+
+  [Header("Fluid Motion")] public ParticleSystem chiBall;
+  private float initialHandDistances;
+  private Vector3 initialChiBallLocalscale;
+  private float startSize;
+  
   
 
 
@@ -26,14 +34,32 @@ public class BoneRelocator : MonoBehaviour
     hipsBasePos = bt.Hips.localPosition;
     baseHipCenter = PoseLandmarkWorldposArray[11] * 0.08f + PoseLandmarkWorldposArray[12] * 0.08f + 
                     PoseLandmarkWorldposArray[23] * 0.42f + PoseLandmarkWorldposArray[24] * 0.42f;//可能有生命周期问题
-   
+    initialHandDistances = Vector3.Distance(bt.LeftHand.position, bt.RightHand.position);
+    initialChiBallLocalscale = chiBall.transform.localScale;
+    startSize = chiBall.main.startSize.constant;
+
+
 
   }
 
   private void Update()
   {
-
     CalculateBoneRotations();
+    
+    //气体运动
+    Vector3 ballPos = bt.LeftHand.position * 0.5f + bt.RightHand.position * 0.5f;
+    chiBall.transform.parent.position = ballPos;
+    float currentHandDistances = Vector3.Distance(bt.LeftHand.position, bt.RightHand.position);
+    float handDistanceFactor = currentHandDistances/initialHandDistances;
+    handDistanceFactor = Mathf.Sqrt(handDistanceFactor);
+    //chiBall.transform.localScale = handDistanceFactor * initialChiBallLocalscale;
+    ParticleSystem.NoiseModule noiseModule = chiBall.noise;
+    ParticleSystem.MainModule mainModule = chiBall.main;
+    mainModule.startSize = startSize*handDistanceFactor*1.2f;
+    noiseModule.strength = Mathf.Lerp(0,2,handDistanceFactor);
+
+
+
   }
   
 
@@ -171,6 +197,7 @@ public class BoneRelocator : MonoBehaviour
     
     
     delta = delta*scaleFactor;
+    delta.z = -delta.z * 0f;//z暂时不动了
    // Debug.Log("deltaY"+deltaY);
     if (!float.IsFinite(delta.y))
     {
@@ -178,14 +205,15 @@ public class BoneRelocator : MonoBehaviour
     }
 
     
-    Debug.Log("和上一帧的差距"+Vector3.Distance(lastDelta,delta));
-    if (Vector3.Distance(lastDelta,delta)>=2)
+   //Debug.Log("和上一帧的差距"+Vector3.Distance(lastDelta,delta));
+    if (Vector3.Distance(lastDelta,delta)>=1)
     {
       return;
-      
     }
+    float footLow = Mathf.Min(l_leftFootCenter.y, l_rightFootCenter.y);
     lastDelta = delta;
     bt.Hips.localPosition = hipsBasePos+delta;
+    footPlane.transform.position = new Vector3(footPlane.transform.position.x, footLow, footPlane.transform.position.z);
 
   }
 
