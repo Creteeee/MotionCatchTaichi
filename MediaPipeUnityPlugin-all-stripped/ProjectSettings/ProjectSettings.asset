@@ -693,19 +693,23 @@ PlayerSettings:
   webGLMemoryGeometricGrowthCap: 96
   webGLPowerPreference: 2
   scriptingDefineSymbols:
-    Android: EXTOSC
-    EmbeddedLinux: EXTOSC
-    GameCoreXboxOne: EXTOSC
-    Nintendo Switch: EXTOSC
-    PS4: EXTOSC
-    PS5: EXTOSC
-    QNX: EXTOSC
-    Stadia: EXTOSC
-    Standalone: EXTOSC
-    VisionOS: EXTOSC
-    WebGL: EXTOSC
-    XboxOne: EXTOSC
-    tvOS: EXTOSC
+    Android: EXTOSC;DOTWEEN
+    EmbeddedLinux: EXTOSC;DOTWEEN
+    GameCoreScarlett: DOTWEEN
+    GameCoreXboxOne: EXTOSC;DOTWEEN
+    LinuxHeadlessSimulation: DOTWEEN
+    Nintendo Switch: EXTOSC;DOTWEEN
+    PS4: EXTOSC;DOTWEEN
+    PS5: EXTOSC;DOTWEEN
+    QNX: EXTOSC;DOTWEEN
+    Stadia: EXTOSC;DOTWEEN
+    Standalone: EXTOSC;DOTWEEN
+    VisionOS: EXTOSC;DOTWEEN
+    WebGL: EXTOSC;DOTWEEN
+    Windows Store Apps: DOTWEEN
+    XboxOne: EXTOSC;DOTWEEN
+    iPhone: DOTWEEN
+    tvOS: EXTOSC;DOTWEEN
   additionalCompilerArguments: {}
   platformArchitecture:
     iPhone: 1

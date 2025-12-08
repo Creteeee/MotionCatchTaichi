@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Threading.Tasks;
+using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -18,9 +19,9 @@ public class GameManager : Singleton<GameManager>
   public MoveSO[] moveSos;
 
   private bool isInPlace = false;//因为就位动作单独拿出来不占数量所以加个bool
-  private int currentMove = 0;
-  private int currentPose = 0;
-  
+  public int currentMove = 0;
+  public int currentPose = 0;
+
   
 
   #region UI
@@ -53,6 +54,16 @@ public class GameManager : Singleton<GameManager>
   {
     SceneManager.UnloadSceneAsync(learningScene.name);
   }
+
+  public IEnumerator RestartGame()
+  {
+    UILearning.Instance.nextPoseText.GetComponent<TMP_Text>().text = "正在退出游戏";
+    yield return new WaitForSeconds(2f);
+    SceneManager.UnloadSceneAsync(learningScene.name);
+    MoveToNextUI(UIRoot.transform.GetChild(1).gameObject, uIPrefabs.UI_HP_00);
+    SendOSC.Instance.SendOSCMessage(playerName+":GameEnd");
+    
+  }
   #endregion
   #region 游戏进程
 
@@ -72,54 +83,61 @@ public class GameManager : Singleton<GameManager>
   public void PlayerExit()
   {
     SendOSC.Instance.SendOSCMessage(playerName+":GameEnd");
+    
+    playerName =  null;
   }
 
   public void MotionChecked()
   {
+    var text = UILearning.Instance.nextPoseText.GetComponent<TMP_Text>();
     if (isInPlace == false)
     {
       isInPlace = true;
-      SendOSC.Instance.SendOSCMessage(playerName+":完成录制_"+moveSos[currentMove]+"_0");
+      text.text = "准备动作已就绪!进入第1个动作";
+      StartCoroutine(PrepairingNextPose(2));
+      UILearning.Instance.UpdateProgressCircles(currentPose);
       return;
     }
     else
     {
       if (currentPose < moveSos[currentMove].poseCount-1)
       {
-        SendOSC.Instance.SendOSCMessage(playerName+":完成录制_"+moveSos[currentMove]+"_"+(currentPose+1));
+        
+        SendOSC.Instance.SendOSCMessage(playerName+":RecordEnd_"+moveSos[currentMove].nameIndex+"_"+(currentPose+1));
         currentPose += 1;
-        StartCoroutine(PrepairingNextMotion(2));
+        text.text = "进入第"+(currentPose+1)+"个动作";
+        StartCoroutine(PrepairingNextPose(2));
+        UILearning.Instance.UpdateProgressCircles(currentPose);
+
       }
       else
       {
-        SendOSC.Instance.SendOSCMessage(playerName+":完成录制_"+moveSos[currentMove]+"_"+(currentPose+1));
+        if (currentMove == 5 && currentPose == moveSos[currentMove].poseCount - 1)
+        {
+          StartCoroutine(RestartGame());
+          return;
+        }
+        SendOSC.Instance.SendOSCMessage(playerName+":RecordEnd_"+moveSos[currentMove].nameIndex+"_"+(currentPose+1));
         currentMove += 1;
         currentPose = 0;
         isInPlace = false;
+        StartCoroutine(UILearning.Instance.ShowMoveSuggestUI());
       }
     }
   }
 
-  IEnumerator PrepairingNextMotion(float time)
+  public IEnumerator PrepairingNextPose(float time)
   {
+    UILearning.Instance.nextPoseText.SetActive(true);
+    UILearning.Instance.trickButton.SetActive(false);
     // 等待
     yield return new WaitForSeconds(time);
-
     //再触发 OSC 消息
     SendOSC.Instance.SendOSCMessage(
-      playerName + ":开始录制_" + moveSos[currentMove] + "_" + (currentPose + 1)
+      playerName + ":RecordStart_" + moveSos[currentMove].nameIndex + "_" + (currentPose + 1)
     );
-  }
-
-
-  public void RecordStart()
-  {
-    
-  }
-  
-  public void RecordEnd()
-  {
-    
+    UILearning.Instance.nextPoseText.SetActive(false);
+    UILearning.Instance.trickButton.SetActive(true);
   }
   #endregion
   
