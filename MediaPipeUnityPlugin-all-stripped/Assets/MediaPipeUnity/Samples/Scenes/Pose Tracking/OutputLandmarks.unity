@@ -461,6 +461,7 @@ MonoBehaviour:
   _poseWorldLandmarksAnnotationController: {fileID: 1936307555}
   _segmentationMaskAnnotationController: {fileID: 1889892135}
   _roiFromLandmarksAnnotationController: {fileID: 1889892133}
+  cam: {fileID: 1264297880}
 --- !u!114 &275874970
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1001,6 +1002,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8571076842338426120, guid: 140d1d2c406167c50819d89f86d9092e,
+        type: 3}
+      propertyPath: m_BlockingMask.m_Bits
+      value: 119
       objectReference: {fileID: 0}
     - target: {fileID: 8571076842338426121, guid: 140d1d2c406167c50819d89f86d9092e,
         type: 3}

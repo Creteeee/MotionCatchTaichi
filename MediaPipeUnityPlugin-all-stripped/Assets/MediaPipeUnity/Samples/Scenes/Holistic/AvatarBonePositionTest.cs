@@ -14,7 +14,7 @@ namespace Mediapipe.Unity.Sample.Holistic
 
     // 实时更新的姿态特征点列表（NormalizedLandmark）
     private IReadOnlyList<NormalizedLandmark> _currentPoseLandmarkList;
-    private Vector3[] _currentPostWorldPosArray = new Vector3[33];//33个特征点检测
+    public static Vector3[] _currentPostWorldPosArray = new Vector3[33];//33个特征点检测
     public BoneRelocator boneRelocator;
 
     // 为每个特征点生成/复用的红色小球
@@ -29,6 +29,9 @@ namespace Mediapipe.Unity.Sample.Holistic
     [Header("Sphere 设置")]
     [SerializeField] private float gizmoDepth = 2.0f;   // 特征点在相机前方的深度
     [SerializeField] private float gizmoRadius = 0.02f; // 红色球半径
+
+    
+    
 
     private void Start()
     {
@@ -205,5 +208,6 @@ namespace Mediapipe.Unity.Sample.Holistic
     {
       return _currentPoseLandmarkList;
     }
+    
   }
 }

@@ -17,7 +17,10 @@ namespace Mediapipe.Unity.Sample.PoseTracking
     [SerializeField] private PoseWorldLandmarkListAnnotationController _poseWorldLandmarksAnnotationController;
     [SerializeField] private MaskAnnotationController _segmentationMaskAnnotationController;
     [SerializeField] private NormalizedRectAnnotationController _roiFromLandmarksAnnotationController;
+    public Camera cam;
+    public static Camera cameraMain;
 
+    public static NormalizedLandmarkList CurrentPoseLandmarks { get; private set; }
     public PoseTrackingGraph.ModelComplexity modelComplexity
     {
       get => graphRunner.modelComplexity;
@@ -62,6 +65,7 @@ namespace Mediapipe.Unity.Sample.PoseTracking
 
     protected override void OnStartRun()
     {
+      cameraMain = cam;
       if (!runningMode.IsSynchronous())
       {
         graphRunner.OnPoseDetectionOutput += OnPoseDetectionOutput;
@@ -91,6 +95,7 @@ namespace Mediapipe.Unity.Sample.PoseTracking
       yield return new WaitUntil(() => task.IsCompleted);
 
       var result = task.Result;
+      CurrentPoseLandmarks = result.poseLandmarks;
       _poseDetectionAnnotationController.DrawNow(result.poseDetection);
       _poseLandmarksAnnotationController.DrawNow(result.poseLandmarks);
       _poseWorldLandmarksAnnotationController.DrawNow(result.poseWorldLandmarks);
@@ -111,6 +116,7 @@ namespace Mediapipe.Unity.Sample.PoseTracking
     {
       var packet = eventArgs.packet;
       var value = packet == null ? default : packet.Get(NormalizedLandmarkList.Parser);
+      CurrentPoseLandmarks = value;
       _poseLandmarksAnnotationController.DrawLater(value);
     }
 
