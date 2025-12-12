@@ -225,7 +225,7 @@ MonoBehaviour:
   m_BlockingObjects: 0
   m_BlockingMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 119
 --- !u!114 &452451591
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -752,6 +752,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 452451593}
     m_Modifications:
+    - target: {fileID: 1372326177417367574, guid: d1f3c7c0e93549d4795975d42b5ec3f3,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3288459279257467117, guid: d1f3c7c0e93549d4795975d42b5ec3f3,
         type: 3}
       propertyPath: m_Name
@@ -762,6 +767,16 @@ PrefabInstance:
       propertyPath: m_fontStyle
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4945273755787437442, guid: d1f3c7c0e93549d4795975d42b5ec3f3,
+        type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 4945273755787437442, guid: d1f3c7c0e93549d4795975d42b5ec3f3,
+        type: 3}
+      propertyPath: m_Material
+      value: 
+      objectReference: {fileID: 2100000, guid: ba8ab06ddd2c39341ad6d0fd63dfe692, type: 2}
     - target: {fileID: 8523565784629245755, guid: d1f3c7c0e93549d4795975d42b5ec3f3,
         type: 3}
       propertyPath: m_Pivot.x

@@ -122,7 +122,7 @@ public class GameManager : Singleton<GameManager>
      {
        return;
      }
-     Debug.Log("当前的SO是"+correctSO.name);
+     
      Vector3[] realtimeLandmarkPoses = AvatarBonePositionTest._currentPostWorldPosArray;
      if (!IsLandmarkValid(realtimeLandmarkPoses))
      {
@@ -135,6 +135,8 @@ public class GameManager : Singleton<GameManager>
      }
      Vector3[] localCorrecctLandmarkPoses = correctSO.poseLandmarks;
      correctLandmarkPoses = localCorrecctLandmarkPoses;
+     Debug.Log("当前的SO是"+correctSO.name);
+     Debug.Log("正确答案的第一个点是");
     
      isCorrect = PoseDetect(realtimeLandmarkPoses, localCorrecctLandmarkPoses, out dirList);
      if (isCorrect)
@@ -282,10 +284,10 @@ public class GameManager : Singleton<GameManager>
     bool b_16_14 = angle_16_14 <= 25 ? true : false;
     bool b_26_24 = angle_26_24 <= 25 ? true : false;
 
-    Debug.Log("左上臂"+angle_13_11);
-    Debug.Log("左下臂"+angle_15_13);
-    Debug.Log("右上臂"+angle_25_23);
-    Debug.Log("右下臂"+angle_14_12);
+    // Debug.Log("左上臂"+angle_13_11);
+    // Debug.Log("左下臂"+angle_15_13);
+    // Debug.Log("右上臂"+angle_25_23);
+    // Debug.Log("右下臂"+angle_14_12);
     //Debug.Log(angle_16_14);
     //Debug.Log(angle_26_24);
     
