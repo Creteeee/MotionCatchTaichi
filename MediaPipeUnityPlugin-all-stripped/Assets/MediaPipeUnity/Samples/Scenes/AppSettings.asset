@@ -51,8 +51,7 @@ MonoBehaviour:
   - width: 1920
     height: 1080
     frameRate: 30
-  _availableStaticImageSources:
-  - {fileID: 2800000, guid: c9e38c220c4d2a24bb27897b31b3e6d7, type: 3}
+  _availableStaticImageSources: []
   _defaultAvailableStaticImageResolutions:
   - width: 512
     height: 512

@@ -108,7 +108,7 @@ public class GameManager : Singleton<GameManager>
 
   void CheckingMotion()
   {
-    CorrectMoveSO correctSO = new CorrectMoveSO();
+    CorrectMoveSO correctSO = ScriptableObject.CreateInstance<CorrectMoveSO>();
     if (isInPlace)
     {
       correctSO= LoadCorrectPose(currentMove, currentPose+1);
